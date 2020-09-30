@@ -9,6 +9,7 @@ output: github_document
 library(tidyverse)
 library(readxl)
 ```
+
 # Problem 1
 
 First, define a path to the dataset. 
@@ -75,7 +76,92 @@ precip_df =
 	left_join(precip_df, month_df, by = "month")
 ```
 
-The dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel_df)` rows in the final dataset after omit non-data entries. Additional data sheets include month precipitation data. In this dataset:
+##### The dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel_df)` rows in the final dataset after omit non-data entries. Additional data sheets include month precipitation data. In this dataset:
 
-* The median number of sports balls found in a dumpster in 2017 was `r trashwheel_df %>% filter(year == 2017) %>% pull(sports_balls) %>% median()`
-* The total precipitation in 2018 was `r precip_df %>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
+##### * The median number of sports balls found in a dumpster in 2017 was `r trashwheel_df %>% filter(year == 2017) %>% pull(sports_balls) %>% median()`
+##### * The total precipitation in 2018 was `r precip_df %>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
+
+
+# Problem 2
+
+Read the NYC transit dataset.
+
+```{r}
+NYC_df = 
+	read_csv(
+		"./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
+		)%>%
+  janitor::clean_names()%>%
+  select(c(2:18, 20, 23))%>%
+  mutate(entry = as.logical(recode(entry, "YES" = 'TRUE', "NO" = 'FALSE')))
+
+names(NYC_df)
+#skimr::skim(NYC_df)
+```
+
+##### * This dataset focuses on NYC transit data that contains the entrances and exits data for different subway stations. The dataset was originally include `r ncol(read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",))` columns of data. We pulled out columns includes the line and station name, station latitude and longitude, routes served, entry and entrance type, vending and ADA to create a new dataset for analysis. The resulting dataset has `r ncol(NYC_df)` columns and `r nrow(NYC_df)` rows. 
+
+##### * After import the data, using clean_names() function to clean the variable names. By pulling out 19 columns from the original data, we recreate a data set that is smaller, which can help us focusing on the data we need. We also change the varible typr in the "entry" column from character variable (YES/NO) to logical variable (TRUE/FALSE).
+
+##### * The data was not very tidy by looking at the columns through "route1" to "route11". There are many empty spacies that was expressing the same thing.
+
+Find distinct stations, stations with ADA compliant, proportion of station entrances/ exits without vending allow entrance.
+
+```{r}
+#Distinct Stations
+dis_line_stat = distinct(NYC_df, line, station_name, .keep_all = TRUE)
+
+#Stations with ADA compliant
+Station_ADA = sum(pull(dis_line_stat, ada), na.rm = TRUE)
+
+#Proportion
+proportion = nrow(filter(NYC_df, vending == "NO", entry == "TRUE"))/nrow(filter(NYC_df, vending == "NO"))
+```
+##### There are `r nrow(dis_line_stat)` dustunct stations. 84 of the stations are ADA compliant. The proportion of station entrances/ exits without vending allow entrance is `r proportion*100`%.
+
+
+```{r}
+#Reformat data so that route number and route name are distinct variables
+Route_line = NYC_df %>%
+  mutate(route8 = as.character(route8),
+         route9 = as.character(route9),
+         route10 = as.character(route10),
+         route11 = as.character(route11)
+  )%>%
+  pivot_longer(route1:route11)%>%
+  rename(route_name = name, route_number = value)
+
+Route_line = distinct(Route_line, route_name, route_number, .keep_all = TRUE)
+
+#Distinct stations serve the A train 
+Station_A = filter(Route_line, route_name == "A", na.rm = TRUE)
+
+#Stations serve the A train and ADA compliant
+Station_A_ADA = filter(Route_line, route_name == "A", ada == "A")
+```
+
+##### There are `r nrow(Station_A)` distinct stations serve the A train.
+##### `r nrow(Station_A_ADA)` of the stations that serve the A train are ADA compliant.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
