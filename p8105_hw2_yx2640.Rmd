@@ -2,29 +2,74 @@
 title: "p8105_hw2_yx2640"
 author: "Elaine Xu"
 date: "9/30/2020"
-output: html_document
+output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup}
+library(tidyverse)
+library(readxl)
+```
+# Problem 1
+
+Read the Mr. Trashwheel dataset. 
+
+```{r}
+trashwheel_df = 
+	read_xlsx(
+		"./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+		sheet = "Mr. Trash Wheel",
+		range = cell_cols("A:N")) %>% 
+	janitor::clean_names() %>% 
+	drop_na(dumpster) %>% 
+	mutate(
+		sports_balls = round(sports_balls),
+		sports_balls = as.integer(sports_balls)
+	)
 ```
 
-## R Markdown
+Read precipitation data for 2018 and 2017. 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+precip_2018 = 
+	read_excel(
+		"./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+		sheet = "2018 Precipitation",
+		skip = 1
+	) %>% 
+	janitor::clean_names() %>% 
+	drop_na(month) %>% 
+	mutate(year = 2018) %>% 
+	relocate(year)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+precip_2017 = 
+	read_excel(
+		"./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+		sheet = "2017 Precipitation",
+		skip = 1
+	) %>% 
+	janitor::clean_names() %>% 
+	drop_na(month) %>% 
+	mutate(year = 2017) %>% 
+	relocate(year)
 ```
 
-## Including Plots
+Now combine annual precipitation dataframes.
 
-You can also embed plots, for example:
+```{r}
+month_df = 
+	tibble(
+		month = 1:12,
+		month_name = month.name
+	)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+precip_df = 
+	bind_rows(precip_2018, precip_2017)
+
+precip_df =
+	left_join(precip_df, month_df, by = "month")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The dataset contains information on year, month, and trash collected, include some specific kinds of trash. There are a total of `r nrow(trashwheel_df)` rows in the final dataset after omit non-data entries. Additional data sheets include month precipitation data. In this dataset:
+
+* The median number of sports balls found in a dumpster in 2017 was `r trashwheel_df %>% filter(year == 2017) %>% pull(sports_balls) %>% median()`
+* The total precipitation in 2018 was `r precip_df %>% filter(year == 2018) %>% pull(total) %>% sum()` inches.
