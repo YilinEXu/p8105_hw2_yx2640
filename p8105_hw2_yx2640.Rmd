@@ -89,7 +89,7 @@ Read the NYC transit dataset.
 ```{r}
 NYC_df = 
 	read_csv(
-		"./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
+		"./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv"
 		)%>%
   janitor::clean_names()%>%
   select(c(2:18, 20, 23))%>%
@@ -129,7 +129,7 @@ Route_line = NYC_df %>%
          route11 = as.character(route11))%>%
   pivot_longer(route1:route11, names_to = "route_number", values_to = "route_name")
 
-Route_line = distinct(Route_line, route_number, route_name, .keep_all = TRUE)
+Route_line = distinct(Route_line, station_name, line, .keep_all = TRUE)
 
 #Distinct stations serve the A train 
 Station_A = filter(Route_line, route_name == "A")
@@ -148,12 +148,12 @@ First, clean the data in pols-month
 # separate mon, replace month number with month name
 pols_month = 
 	read_csv(
-		"./data/fivethirtyeight_datasets/pols-month.csv",
+		"./data/fivethirtyeight_datasets/pols-month.csv"
 		) %>%
   janitor::clean_names() %>%
   separate(mon, c("year","month","day")) %>%
   mutate(year = as.integer(year), month = as.integer(month), day = as.integer(day))%>%
-  mutate(month = month.name[month])
+  mutate(month = month.abb[month])
 
 # create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable
 pols_month = mutate(pols_month, president = ifelse(prez_gop == "0", "dem","gop"))%>%
@@ -166,20 +166,32 @@ Second, clean the data in snp.csv
 # separate date, replace month number with month name, arrange by year and month
 snp = 
 	read_csv(
-		"./data/fivethirtyeight_datasets/snp.csv",
+		"./data/fivethirtyeight_datasets/snp.csv"
 		) %>%
   janitor::clean_names() %>%
   separate(date, c("month","day","year")) %>%
   mutate(year = as.integer(year), month = as.integer(month), day = as.integer(day))%>%
   arrange(year, month)%>%
-  mutate(month = month.name[month])%>%
+  mutate(month = month.abb[month])%>%
   relocate(year, .before = "month")
 
 ```
 
+Third, tidy the unemployment data 
+```{r}
+unemploy = 
+	read_csv(
+		"./data/fivethirtyeight_datasets/unemployment.csv"
+		)%>%
+  pivot_longer(Jan:Dec, names_to = "month", values_to = "unemploy_percent")%>%
+  mutate(Year = as.integer(Year))
+  
+```
 
+Join the datasets by merging snp into pols, and merging unemployment into the result.
+```{r}
 
-
+```
 
 
 
